@@ -1,0 +1,86 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar  7 15:44:14 2026
+
+@author: xyq
+"""
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+# 1. 设置全局字体为 Times New Roman
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = ['Times New Roman', 'DejaVu Serif', 'serif']
+mpl.rcParams['axes.unicode_minus'] = False # 用于正确显示负号
+
+# 2. 数据准备
+speeds = [0, 100, 125, 150, 200]
+avg_heights = [1855.6, 1966.9, 1740.1, 1676.9, 1057.3]
+rms_heights = [2109.5, 2185.0, 1997.4, 1900.3, 1326.4]
+
+# 3. 字体大小设置 (整体大幅调大以适应Word内缩放，全部取消加粗)
+large_text_size = 20    # 数据标签与分区文字
+large_label_size = 22   # 坐标轴标题
+large_legend_size = 18  # 坐标轴刻度数字
+legend_font_size = 18   # 图例文字（因文本较长，单独设置以防遮挡）
+
+# 4. 创建图表 (稍微加宽画布以容纳更长的图例名称)
+fig, ax = plt.subplots(figsize=(8.5, 4.6))
+
+# --- 修改点1：添加颜色分区与虚线 ---
+# 分区一: Wear Zone (0 - 100 m/s)
+ax.axvspan(-15, 100, facecolor='#E8E8E8', alpha=0.6, zorder=0)
+# 分区二: Polishing Zone (100 - 215 m/s)
+ax.axvspan(100, 215, facecolor='#FFEBCD', alpha=0.5, zorder=0)
+
+# 增加分区虚线 (在100 m/s处)
+ax.axvline(x=100, color='gray', linestyle='--', linewidth=1.5, zorder=2)
+
+# 在分区上方添加文字说明 (英文，取消加粗，使用斜体增加学术感)
+ax.text(42.5, 2270, 'Wear Zone', ha='center', va='center', 
+        fontsize=large_text_size, family='Times New Roman', style='italic', color='#555555')
+ax.text(157.5, 2270, 'Polishing Zone', ha='center', va='center', 
+        fontsize=large_text_size, family='Times New Roman', style='italic', color='#B86A00')
+# ------------------------------------
+
+# --- 修改点2：绘制折线图，更新学术图例名称 ---
+ax.plot(speeds, avg_heights, marker='o', linestyle='-', color='deepskyblue', 
+        label='Arithmetic mean height Sa (μm)', markersize=12, linewidth=2, zorder=3)
+ax.plot(speeds, rms_heights, marker='s', linestyle='-', color='darkorange', 
+        label='Root mean square height Sq (μm)', markersize=12, linewidth=2, zorder=3)
+
+# 5. 添加数据标签 (取消加粗)
+for speed, avg in zip(speeds, avg_heights):
+    ax.text(speed, avg + 60, f'{avg:.1f}', ha='center', va='bottom',
+            fontsize=large_text_size, color='deepskyblue', family='Times New Roman')
+
+for speed, rms in zip(speeds, rms_heights):
+    ax.text(speed, rms + 60, f'{rms:.1f}', ha='center', va='bottom',
+            fontsize=large_text_size, color='darkorange', family='Times New Roman')
+
+# 6. 设置轴标签、刻度和范围 (取消加粗)
+ax.set_xlabel('Impact Velocity (m/s)', fontsize=large_label_size, family='Times New Roman')
+ax.set_ylabel('Roughness Height (μm)', fontsize=large_label_size, family='Times New Roman')
+
+ax.set_xticks(list(range(0, 201, 50)))
+ax.set_yticks(list(range(900, 2351, 400)))
+ax.set_xlim(-15, 215)
+ax.set_ylim(900, 2400) 
+
+# 设置刻度轴的字体大小和字体
+plt.setp(ax.get_xticklabels(), fontsize=large_legend_size, family='Times New Roman')
+plt.setp(ax.get_yticklabels(), fontsize=large_legend_size, family='Times New Roman')
+
+# 7. 调整图例
+# 排除掉分区阴影和虚线产生的多余图例，仅保留两根折线的图例
+handles, labels = ax.get_legend_handles_labels()
+line_handles = [h for h, l in zip(handles, labels) if 'height' in l.lower()]
+line_labels = [l for l in labels if 'height' in l.lower()]
+
+ax.legend(line_handles, line_labels, loc='lower left', 
+          prop={'family': 'Times New Roman', 'size': legend_font_size}, 
+          framealpha=0.9, edgecolor='gray')
+
+# 8. 调整布局并保存
+plt.tight_layout()
+plt.savefig('roughness_speed_effect_zones.png', dpi=900, bbox_inches='tight')
+plt.show()
