@@ -1,0 +1,89 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar  7 16:04:40 2026
+
+@author: xyq
+"""
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+# 1. 设置全局字体为 Times New Roman
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = ['Times New Roman', 'DejaVu Serif', 'serif']
+mpl.rcParams['axes.unicode_minus'] = False # 用于正确显示负号
+
+# 2. 提取绘图所需数据 (速度=150m/s)
+times = [0, 20, 40, 60]
+avg_heights = [1855.6, 1928.4, 1676.9, 1272.9]
+rms_heights = [2109.5, 2173.6, 1900.29, 1507.6]
+
+# 3. 字体大小设置 (整体调大以适应Word排版，无加粗)
+large_text_size = 20    # 数据标签与分区文字
+large_label_size = 22   # 坐标轴标题
+large_legend_size = 18  # 坐标轴刻度数字
+legend_font_size = 18   # 图例文字单独设置以防遮挡
+
+# 4. 创建图表 (加宽画布)
+fig, ax = plt.subplots(figsize=(8.5, 4.6))
+
+# --- 修改点1：添加颜色分区与虚线 (临界点设为 20 min) ---
+# 分区一: Wear Zone (0 - 20 min)
+ax.axvspan(-5, 20, facecolor='#E8E8E8', alpha=0.6, zorder=0)
+# 分区二: Polishing Zone (20 - 65 min)
+ax.axvspan(20, 65, facecolor='#FFEBCD', alpha=0.5, zorder=0)
+
+# 增加分区虚线 (在20 min处)
+ax.axvline(x=20, color='gray', linestyle='--', linewidth=1.5, zorder=2)
+
+# 在分区上方添加文字说明 (取消加粗，斜体)
+ax.text(7.5, 2300, 'Wear Zone', ha='center', va='center', 
+        fontsize=large_text_size, family='Times New Roman', style='italic', color='#555555')
+ax.text(42.5, 2300, 'Polishing Zone', ha='center', va='center', 
+        fontsize=large_text_size, family='Times New Roman', style='italic', color='#B86A00')
+# --------------------------------------------------------
+
+# --- 修改点2：绘制折线图，更新学术图例名称 ---
+ax.plot(times, avg_heights, marker='o', linestyle='-', color='deepskyblue', 
+        label='Arithmetic mean height Sa (μm)', markersize=12, linewidth=2, zorder=3)
+ax.plot(times, rms_heights, marker='s', linestyle='-', color='darkorange', 
+        label='Root mean square height Sq (μm)', markersize=12, linewidth=2, zorder=3)
+
+# 5. 添加数据标签 (修正了原代码中 offset 太小的问题)
+offset_y = 60
+for time, avg in zip(times, avg_heights):
+    ax.text(time, avg + offset_y, f'{avg:.1f}', ha='center', va='bottom',
+            fontsize=large_text_size, color='deepskyblue', family='Times New Roman')
+
+for time, rms in zip(times, rms_heights):
+    ax.text(time, rms + offset_y, f'{rms:.1f}', ha='center', va='bottom',
+            fontsize=large_text_size, color='darkorange', family='Times New Roman')
+
+# 6. 设置轴标签和边界 (取消加粗)
+ax.set_xlabel('Erosion Time (min)', fontsize=large_label_size, family='Times New Roman')
+ax.set_ylabel('Roughness Height (μm)', fontsize=large_label_size, family='Times New Roman')
+
+# 设置 X/Y 轴刻度和范围
+ax.set_xticks(times)
+ax.set_yticks(list(range(900, 2401, 400)))
+ax.set_xlim(-5, 65)
+ax.set_ylim(900, 2400) # 将下限从990拉回900对齐刻度，为顶部留足标签空间
+
+# 设置刻度轴的字体大小和字体
+plt.setp(ax.get_xticklabels(), fontsize=large_legend_size, family='Times New Roman')
+plt.setp(ax.get_yticklabels(), fontsize=large_legend_size, family='Times New Roman')
+
+# 7. 调整图例
+# 排除多余的背景色图例，仅保留折线图例
+handles, labels = ax.get_legend_handles_labels()
+line_handles = [h for h, l in zip(handles, labels) if 'height' in l.lower()]
+line_labels = [l for l in labels if 'height' in l.lower()]
+
+ax.legend(line_handles, line_labels, loc='lower left', 
+          prop={'family': 'Times New Roman', 'size': legend_font_size}, 
+          framealpha=0.9, edgecolor='gray')
+
+# 8. 调整布局并保存
+plt.tight_layout()
+plt.savefig('roughness_time_effect_zones.png', dpi=900, bbox_inches='tight')
+plt.show()
