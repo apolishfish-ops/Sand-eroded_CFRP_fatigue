@@ -1,0 +1,102 @@
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ================= 1. 参数设置 (全新解耦模型) =================
+sigma_f0 = 372.49       # 初始状态疲劳极限 (MPa)
+k = 2.05e-6             # 新全局退化系数
+beta_v = 1.214          # 速度损伤敏感度指数
+beta_t = 1.667          # 时间损伤敏感度指数
+
+# 解决图表字体显示问题 (采用高标准学术格式)
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+plt.rcParams['mathtext.fontset'] = 'stix'
+plt.rcParams['axes.unicode_minus'] = False 
+
+# ================= 2. 定义退化模型公式 =================
+def calc_sigma_f_new(v, t):
+    """
+    计算砂蚀后的残余疲劳极限 (解耦模型)
+    """
+    degradation = k * (v**beta_v) * (t**beta_t)
+    sigma_f = sigma_f0 * (1 - degradation)
+    
+    # 当疲劳极限小于0时（即材料已完全破坏），返回 np.nan。
+    return np.where(sigma_f < 0, np.nan, sigma_f)
+
+# ================= 3. 图一：疲劳极限随冲击速度的变化 =================
+v_range = np.linspace(0, 250, 500)
+t_values = [0, 20, 40, 60]
+
+plt.figure(figsize=(9, 6))
+
+# --- 新增：为图一构建数据矩阵和表头 ---
+data_fig1 = [v_range]  # 列表第一项为X轴数据
+header_fig1 = ["Velocity(v)"] # 表头第一项为X轴名称
+
+for t in t_values:
+    sigma_f_values = calc_sigma_f_new(v_range, t)
+    plt.plot(v_range, sigma_f_values, label=f'Sand erosion time t = {t} min', linewidth=2)
+    
+    # 每次循环将算出的Y值加入列表，并更新表头
+    data_fig1.append(sigma_f_values)
+    header_fig1.append(f"t={t}min")
+
+plt.xticks(fontsize=18)
+plt.yticks(fontsize=18)
+plt.xlabel('Impact velocity v (m/s)', fontsize=18)
+plt.ylabel('Fatigue limit after sand erosion $\sigma_f$ (MPa)', fontsize=18)
+plt.ylim(bottom=0) 
+plt.legend(fontsize=16)
+plt.tight_layout()
+plt.show()  
+
+# --- 新增：使用 numpy 导出图一数据 ---
+matrix_fig1 = np.column_stack(data_fig1)
+np.savetxt('Graph1_Velocity_Effect.csv', 
+           matrix_fig1, 
+           delimiter=',', 
+           header=','.join(header_fig1), # 将表头列表转为逗号分隔的字符串
+           comments='', 
+           fmt='%.4f')
+print("Graph 1 数据已导出为: Graph1_Velocity_Effect.csv")
+
+
+# ================= 4. 图二：疲劳极限随砂蚀时间的变化 =================
+t_range = np.linspace(0, 80, 500)
+v_values = [0, 100, 125, 150, 200]
+
+plt.figure(figsize=(9, 6))
+
+# --- 新增：为图二构建数据矩阵和表头 ---
+data_fig2 = [t_range]  # 列表第一项为X轴数据
+header_fig2 = ["Time(t)"] # 表头第一项为X轴名称
+
+for v in v_values:
+    sigma_f_values = calc_sigma_f_new(v, t_range)
+    plt.plot(t_range, sigma_f_values, label=f'Impact velocity v = {v} m/s', linewidth=2)
+    
+    # 每次循环将算出的Y值加入列表，并更新表头
+    data_fig2.append(sigma_f_values)
+    header_fig2.append(f"v={v}m/s")
+
+plt.xticks(fontsize=18)
+plt.yticks(fontsize=18)
+plt.xlabel('Sand erosion time t (min)', fontsize=18)
+plt.ylabel('Fatigue limit after sand erosion $\sigma_f$ (MPa)', fontsize=18)
+plt.ylim(bottom=0)
+plt.legend(fontsize=16)
+plt.tight_layout()
+plt.show()
+
+# --- 新增：使用 numpy 导出图二数据 ---
+matrix_fig2 = np.column_stack(data_fig2)
+np.savetxt('Graph2_Time_Effect.csv', 
+           matrix_fig2, 
+           delimiter=',', 
+           header=','.join(header_fig2), 
+           comments='', 
+           fmt='%.4f')
+print("Graph 2 数据已导出为: Graph2_Time_Effect.csv")
