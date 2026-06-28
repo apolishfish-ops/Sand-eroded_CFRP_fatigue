@@ -98,6 +98,7 @@ The complete citation information should be updated after publication.
 ## License
 
 Please specify the data license before public release.
+- **CC BY 4.0**: Allows reuse with attribution.
 
 - **CC0 1.0**: Allows unrestricted public reuse.
 
