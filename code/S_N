@@ -1,0 +1,89 @@
+# -*- coding: utf-8 -*-
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ================= 1. 模型参数设置 =================
+k = 2.05e-6             # 全局退化系数
+beta_v = 1.214          # 速度损伤敏感度指数
+beta_t = 1.667          # 时间损伤敏感度指数
+
+# 解决图表字体显示问题 (高标准学术格式)
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+plt.rcParams['mathtext.fontset'] = 'stix'
+plt.rcParams['axes.unicode_minus'] = False 
+
+# ================= 2. 原始实验数据手动录入 =================
+# 原始无损状态 S-N 曲线 (Baseline)
+LgN_ori = np.array([6.0, 5.2, 4.9, 3.1, 2.9])
+S_ori = np.array([372.33, 398.925, 413.7, 431.43, 443.25])
+
+# --- 随冲击速度变化的实验数据 (固定冲蚀时间 t=40min) ---
+# 1. 低速工况 (100 m/s)
+LgN_100 = np.array([6.0, 5.55646, 4.94004, 3.30103, 2.85749])
+S_100 = np.array([295.1, 306.45, 317.8, 329.15, 340.5])
+
+# 2. 中速工况 (150 m/s) - 
+LgN_150 = np.array([6.0, 5.0, 4.6, 3.3, 2.8]) 
+S_150 = np.array([226.04, 230.5067, 237.9424, 245.3781, 252.8138]) 
+
+# 3. 高速工况 (200 m/s)
+LgN_200 = np.array([6.0, 5.2, 4.5, 3.5, 2.97])
+S_200 = np.array([156.75, 162.17108, 167.4024, 172.63373, 177.86505])
+
+# ================= 3. 定义等比例预测函数 =================
+def get_pred_curve(v, t):
+    """
+    根据给定的 v 和 t 计算宏观退化程度，
+    利用系数等比例放缩原始 S-N 曲线，返回预测的 S_pred 数组。
+    """
+    degradation = k * (v**beta_v) * (t**beta_t)
+    C = 1 - degradation
+    return C * S_ori
+
+# ================= 4. 绘制并导出单一综合 S-N 图 =================
+t_const = 40  # 固定时间为 40 min
+
+plt.figure(figsize=(9, 6))
+
+# 绘制实验曲线 (虚线+散点)
+plt.plot(LgN_ori, S_ori, 'k--o', label='Experimental: Original', linewidth=1.5, markersize=6)
+plt.plot(LgN_100, S_100, 'r--o', label='Experimental: 100 m/s', linewidth=1.5, markersize=6)
+plt.plot(LgN_150, S_150, 'b--o', label='Experimental: 150 m/s', linewidth=1.5, markersize=6)
+plt.plot(LgN_200, S_200, 'g--o', label='Experimental: 200 m/s', linewidth=1.5, markersize=6)
+
+# 绘制理论预测曲线 (实线)
+pred_100 = get_pred_curve(100, t_const)
+pred_150 = get_pred_curve(150, t_const)
+pred_200 = get_pred_curve(200, t_const)
+
+plt.plot(LgN_ori, pred_100, 'r-', label='Predicted: 100 m/s', linewidth=2.5)
+plt.plot(LgN_ori, pred_150, 'b-', label='Predicted: 150 m/s', linewidth=2.5)
+plt.plot(LgN_ori, pred_200, 'g-', label='Predicted: 200 m/s', linewidth=2.5)
+
+# 图表排版格式设置
+plt.xlabel('Fatigue Life $LgN$', fontsize=18)
+plt.ylabel('Maximum Stress $S_{max}$ (MPa)', fontsize=18)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+# 将图例分两列显示，避免遮挡曲线
+plt.legend(fontsize=12, ncol=2) 
+plt.title(f'Experimental vs Predicted S-N Curves (t = {t_const} min)', fontsize=16)
+plt.tight_layout()
+
+# 保存预览图片
+plt.savefig("SN_Comparison_100_150_200.png", dpi=300)
+plt.show()
+
+# --- 导出便于 Origin 绘图的数据矩阵 ---
+# 结构: [X_ori, Y_ori, X_exp100, Y_exp100, X_pred100, Y_pred100, ...]
+header = "LgN_ori,S_ori,LgN_Exp100,S_Exp100,LgN_Pred100,S_Pred100,LgN_Exp150,S_Exp150,LgN_Pred150,S_Pred150,LgN_Exp200,S_Exp200,LgN_Pred200,S_Pred200"
+matrix = np.column_stack([
+    LgN_ori, S_ori, 
+    LgN_100, S_100, LgN_ori, pred_100, 
+    LgN_150, S_150, LgN_ori, pred_150, 
+    LgN_200, S_200, LgN_ori, pred_200
+])
+
+np.savetxt('SN_Data_100_150_200.csv', matrix, delimiter=',', header=header, comments='', fmt='%.4f')
+print("✅ S-N曲线数据已成功导出为: SN_Data_100_150_200.csv")
